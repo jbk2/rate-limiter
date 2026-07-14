@@ -11,6 +11,8 @@ class RateLimiter
     @redis.get(redis_key(ip)).to_i < @limit
   end
   
+  # Below will increment to @limit +1. Write a LUA script so Redis can run
+  # increment on server conditionally.
   def check!(ip)
     key = redis_key(ip)
 
@@ -25,14 +27,18 @@ class RateLimiter
   end
 
   def ttl(ip)
-    key = redis_key(ip)
-    ttl = @redis.ttl(key)
+    ttl = @redis.ttl(redis_key(ip))
     
     ttl > -1 ? ttl : @time
   end
+  
+  def remaining(ip)
+    @limit - @redis.get(redis_key(ip)).to_i
+  end
+    
+
 
   private
-  
   def redis_key(ip)
     "rate-limit:#{ip}"
   end

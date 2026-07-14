@@ -107,4 +107,23 @@ RSpec.describe "Rate Limiter Class" do
     end
   end
 
+  describe "#remaining" do
+    context "when there are remaining requests in rate window" do
+      it "correctly returns number of remaining requests" do
+        five_remaining_ip = "15.15.1.1"
+        5.times { limiter.check!(five_remaining_ip) }
+        
+        expect(limiter.remaining(five_remaining_ip)).to eq(5)
+      end    
+      
+      context "when there are no remaining requests" do
+        it "correctly returns zero" do
+          zero_remaining_ip = "0.0.0.0"
+          10.times { limiter.check!(zero_remaining_ip) }
+
+          expect(limiter.remaining(zero_remaining_ip)).to eq(0)
+        end      
+      end
+    end
+  end
 end
