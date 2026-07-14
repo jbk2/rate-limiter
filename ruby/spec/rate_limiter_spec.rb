@@ -1,6 +1,6 @@
 require 'rspec'
 require 'redis'
-require_relative '../rate_limiter'
+require_relative '../lib/rate_limiter'
 
 RSpec.describe "Rate Limiter Class" do
   let(:ip) { "011.011.01.01" }

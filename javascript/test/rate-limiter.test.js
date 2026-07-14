@@ -1,4 +1,4 @@
-import { RateLimiter, RequestLimitReachedError } from "./rate-limiter.js";
+import { RateLimiter, RequestLimitReachedError } from "../src/rate-limiter.js";
 import { createClient } from "redis";
 
 let redis, limiter;
@@ -101,8 +101,7 @@ describe("#remaining, when IP does have requests remaining ", () => {
     for(let i = 0; i < 10; i++) {
       await limiter.check(ip)
     }
-    console.log(await limiter.remaining(ip) - 10)
-    console.log(limiter.limit)
+    
     expect(await limiter.remaining(ip)).toBe(0);
   })
 })
