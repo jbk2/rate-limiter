@@ -12,18 +12,16 @@ bundle install
 
 Tests use a real Redis connection and call `flushdb` before each example to keep state isolated.
 ```bash
-rspec spec
+rspec
 ```
 
 ```ruby
 require_relative "rate_limiter"
 require "redis"
-limiter = RateLimiter.new(
-  limit: 10,
-  time: 60,              # window in seconds
-  redis: Redis.new
-)
+
+limiter = RateLimiter.new(limit: 10, time: 60, redis: Redis.new)
 ip = "1.2.3.4"
+
 limiter.allowed?(ip)       # => true (read-only check)
 limiter.increment!(ip)     # => { "limit" => "10", "count" => "1" }
 ```
@@ -33,8 +31,7 @@ limiter.increment!(ip)     # => { "limit" => "10", "count" => "1" }
 ## API
 
 ### `RateLimiter.new(limit:, time:, redis:)`
-
-Creates a rate limiter instance.
+- Creates a rate limiter instance.
 | Argument | Type    | Description                                |
 |----------|---------|--------------------------------------------|
 | `limit`  | Integer | Maximum requests allowed per IP per window |
@@ -43,10 +40,8 @@ Creates a rate limiter instance.
 
 
 ### `#allowed?(ip_address)`
-
 - **Read-only check** - Use when you want to check without recording a request.
 — does not increment the counter.
-
 |            |                                                                 |
 |------------|-----------------------------------------------------------------|
 | **Param**  | `ip_address` (String)                                           |
@@ -56,9 +51,7 @@ Creates a rate limiter instance.
 
 
 ### `#increment!(ip_address)`
-
--**Records a request** — increments the counter for the IP.
-
+- **Records a request** — increments the counter for the IP.
 |            |                                                                 |
 |------------|-----------------------------------------------------------------|
 | **Param**  | `ip_address` (String)                                           |
@@ -78,3 +71,11 @@ Top-level exception raised by `#increment!` when an IP has hit its limit.
     puts e.message  # "You have breached your rate limit"
   end
 ```
+
+### `#ttl(ip_address)`
+- Use when you want to check remaining limit time window for an IP.
+|            |                                                                 |
+|------------|-----------------------------------------------------------------|
+| **Param**  | `ip_address` (String)                                           |
+| **Returns**| Integer value representing rate window ttl for given IP         |
+| **Raises** | Nothing, but if IP not made requests, returns limiter' time     |
