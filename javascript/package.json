@@ -1,0 +1,26 @@
+{
+  "name": "rate_limiter",
+  "version": "1.0.0",
+  "description": "A simple Ruby rate limiting service backed by Redis. Tracks requests per IP address and enforces a maximum number of requests within a time window.",
+  "homepage": "https://github.com/jbk2/rate-limiter#readme",
+  "bugs": {
+    "url": "https://github.com/jbk2/rate-limiter/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbk2/rate-limiter.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "redis": "^6.1.0"
+  }
+}
