@@ -8,40 +8,33 @@ class RateLimiter
   end
 
   def allowed?(ip)
-    if @redis.hexists(ip, "count")
-      limit, count = @redis.hmget(ip, "limit", "count")
-    
-      return false if count.to_i >= limit.to_i
-    end
-    
-    return true
+    @redis.get(redis_key(ip)).to_i < @limit
   end
   
-  def increment!(ip)
-    if @redis.hexists(ip, "count")
-      limit, count = @redis.hmget(ip, "limit", "count")
-      
-      if count.to_i >= limit.to_i
-        raise RequestLimitReachedError, "You have breached your rate limit"
-      else
-        @redis.hincrby(ip, "count", 1)
-        return @redis.hgetall(ip)
-      end
-    else
-      @redis.multi do |r|
-        r.hset(ip, { limit: @limit, count: 1 })
-        r.expire(ip, @time)
-      end
-      return @redis.hgetall(ip)
-    end
+  def check!(ip)
+    key = redis_key(ip)
+
+    count = @redis.multi do |r|
+      r.incr(key)
+      r.expire(key, @time, nx: true)
+    end.first
+
+    raise RequestLimitReachedError if count > @limit
+
+    count
   end
 
   def ttl(ip)
-    if @redis.hexists(ip, "count")
-      @redis.ttl(ip)
-    else
-      @time
-    end
+    key = redis_key(ip)
+    ttl = @redis.ttl(key)
+    
+    ttl > -1 ? ttl : @time
+  end
+
+  private
+  
+  def redis_key(ip)
+    "rate-limit:#{ip}"
   end
   
 end
