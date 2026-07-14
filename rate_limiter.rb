@@ -33,7 +33,11 @@ class RateLimiter
   end
   
   def remaining(ip)
-    @limit - @redis.get(redis_key(ip)).to_i
+    [@limit - @redis.get(redis_key(ip)).to_i, 0].max
+  end
+
+  def reset_at(ip)
+    Time.now.to_i + ttl(ip)
   end
     
 

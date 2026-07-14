@@ -126,4 +126,21 @@ RSpec.describe "Rate Limiter Class" do
       end
     end
   end
+
+  describe "#reset_at" do
+  let(:ip) { "3.3.3.3" }
+    it "correctly returns rate window reset time as epoch integer" do
+      limiter.check!(ip)
+      
+      expect(limiter.reset_at(ip)).to eq(Time.now.to_i + limiter.ttl(ip))
+    end
+    
+    it "unit test with stubs returns correct reset time" do
+      frozen = Time.at(1_000_000_000)
+      allow(Time).to receive(:now).and_return(frozen)
+      allow(limiter).to receive(:ttl).with(ip).and_return(45)
+      puts frozen.to_i
+      expect(limiter.reset_at(ip)).to eq(frozen.to_i + 45)
+    end
+  end
 end
