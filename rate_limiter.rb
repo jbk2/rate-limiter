@@ -1,4 +1,6 @@
 class RateLimiter
+  attr_reader :time
+  
   def initialize(limit:, time:,  redis:)
     @limit = limit.to_i
     @time = time.to_i
@@ -35,7 +37,11 @@ class RateLimiter
   end
 
   def ttl(ip)
-    @redis.ttl(ip)
+    if @redis.hexists(ip, "count")
+      @redis.ttl(ip)
+    else
+      @time
+    end
   end
   
 end

@@ -89,12 +89,23 @@ RSpec.describe "Rate Limiter Class" do
   end
 
   describe "#ttl" do
-    it "returns the correct time to live until limit window resets" do
-      fresh_ip = "12.12.1.1"
-      limiter.increment!(fresh_ip)
-      expect(limiter.ttl(fresh_ip)).to eq(60)
-      sleep 1.1
-      expect(limiter.ttl(fresh_ip)).to eq(59)
+    context "for an IP that has requested" do
+      it "returns the correct time to live until limit window resets" do
+        fresh_ip = "12.12.1.1"
+        limiter.increment!(fresh_ip)
+        expect(limiter.ttl(fresh_ip)).to eq(60)
+        sleep 1.1
+        expect(limiter.ttl(fresh_ip)).to eq(59)
+      end
+    end
+    
+    context "for an IP which has never requested" do
+      it "returns the time value set on the limiter" do
+        limiter_time_val = limiter.time
+        new_ip = "13.13.1.1"
+
+        expect(limiter.ttl(new_ip)).to eq(60)
+      end
     end
   end
 end
