@@ -32,6 +32,7 @@ limiter.increment!(ip)     # => { "limit" => "10", "count" => "1" }
 
 ### `RateLimiter.new(limit:, time:, redis:)`
 - Creates a rate limiter instance.
+
 | Argument | Type    | Description                                |
 |----------|---------|--------------------------------------------|
 | `limit`  | Integer | Maximum requests allowed per IP per window |
@@ -42,6 +43,7 @@ limiter.increment!(ip)     # => { "limit" => "10", "count" => "1" }
 ### `#allowed?(ip_address)`
 - **Read-only check** - Use when you want to check without recording a request.
 — does not increment the counter.
+
 |            |                                                                 |
 |------------|-----------------------------------------------------------------|
 | **Param**  | `ip_address` (String)                                           |
@@ -52,6 +54,7 @@ limiter.increment!(ip)     # => { "limit" => "10", "count" => "1" }
 
 ### `#increment!(ip_address)`
 - **Records a request** — increments the counter for the IP.
+
 |            |                                                                 |
 |------------|-----------------------------------------------------------------|
 | **Param**  | `ip_address` (String)                                           |
@@ -74,6 +77,7 @@ Top-level exception raised by `#increment!` when an IP has hit its limit.
 
 ### `#ttl(ip_address)`
 - Use when you want to check remaining limit time window for an IP.
+
 |            |                                                                 |
 |------------|-----------------------------------------------------------------|
 | **Param**  | `ip_address` (String)                                           |
