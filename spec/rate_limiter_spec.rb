@@ -47,7 +47,6 @@ RSpec.describe "Rate Limiter Class" do
   end
 
   describe "#increment!" do
-    # case where ip never requested before - it gets created with count of 1
     context "newly requesting ip" do
       it "is allowed and logs request correctly in redis" do
         new_ip = "2.2.2.2"
@@ -58,7 +57,6 @@ RSpec.describe "Rate Limiter Class" do
 
     context "already requested ip" do
       context "inside of rate limit" do
-        # case where ip has requested before - within limit - count increments
         five_req_ip = "5.5.5.5"
         it "increments correctly" do
           4.times { limiter.increment!(five_req_ip) }
@@ -68,7 +66,6 @@ RSpec.describe "Rate Limiter Class" do
       end
       
       context "outside of rate limit" do
-        # case where ip is at limit and next request returns error
         ten_req_ip = "10.10.10.10"
         it "raises RequestLimitReachedError" do
           9.times { limiter.increment!(ten_req_ip) }
@@ -88,6 +85,16 @@ RSpec.describe "Rate Limiter Class" do
           expect(short_limiter.allowed?(ip)).to eq(true)
         end
       end
+    end
+  end
+
+  describe "#ttl" do
+    it "returns the correct time to live until limit window resets" do
+      fresh_ip = "12.12.1.1"
+      limiter.increment!(fresh_ip)
+      expect(limiter.ttl(fresh_ip)).to eq(60)
+      sleep 1.1
+      expect(limiter.ttl(fresh_ip)).to eq(59)
     end
   end
 end

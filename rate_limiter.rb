@@ -34,13 +34,10 @@ class RateLimiter
     end
   end
 
+  def ttl(ip)
+    @redis.ttl(ip)
+  end
   
 end
 
 class RequestLimitReachedError < StandardError; end
-
-# logic idea:
-# - each request set an Expire at the time value
-# - every request increment by one
-# - only increment if count is < limit
-# - if count >= limit then return RequestLimitReachedError
