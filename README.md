@@ -1,85 +1,110 @@
 # RateLimiter
-A simple Ruby rate limiting service backed by Redis. Tracks requests per IP address and enforces a maximum number of requests within a time window.
+
+A simple rate limiting service backed by Redis. Tracks requests per IP address and enforces a maximum number of requests within a time window.
+
+Implemented in both **Ruby** and **JavaScript**.
 
 ## Requirements
-- Ruby 3.x
+
 - Redis running locally (default: `127.0.0.1:6379`)
+- **Ruby:** Ruby 3.x
+- **JavaScript:** Node.js 18+
 
-## Setup, Tests & Quick Start
+Both test suites use a real Redis connection and call `flushdb` / `flushDb` before each example to keep state isolated.
+
+## Ruby ↔ JavaScript methods
+
+| Ruby            | JavaScript       |
+|-----------------|------------------|
+| `allowed?`      | `allowed`        |
+| `check!`        | `check`          |
+| `reset_at`      | `resetAt`        |
+| `ttl`           | `ttl`            |
+| `remaining`     | `remaining`      |
+
+Both implementations share the same logic: increment a Redis counter per IP, set a TTL on first request, and reject once the count exceeds the limit.
+
+---
+
+## Ruby
+
+### Setup & tests
+
 ```bash
+cd ruby
 bundle install
+bundle exec rspec
 ```
 
-Tests use a real Redis connection and call `flushdb` before each example to keep state isolated.
-```bash
-rspec
-```
+### Quick start
 
 ```ruby
-require_relative "rate_limiter"
+require_relative "lib/rate_limiter"
 require "redis"
 
 limiter = RateLimiter.new(limit: 10, time: 60, redis: Redis.new)
 ip = "1.2.3.4"
 
-limiter.allowed?(ip)       # => true (read-only check)
-limiter.increment!(ip)     # => { "limit" => "10", "count" => "1" }
+limiter.allowed?(ip)   # => true (read-only check)
+limiter.check!(ip)      # => 1 (records request, returns count)
 ```
+
+### API
+
+- `RateLimiter.new(limit:, time:, redis:)` — create a limiter (`limit` = max requests per window, `time` = window in seconds).
+- `#allowed?(ip)` — read-only; returns `true` if under limit (or no record yet).
+- `#check!(ip)` — increment and return count; raises `RequestLimitReachedError` when over limit.
+- `#ttl(ip)` — seconds until window resets; returns `time` if IP has no record.
+- `#remaining(ip)` — requests left in the current window.
+- `#reset_at(ip)` — Unix timestamp when the window expires.
+
+Redis keys: `rate-limit:<ip>`.
 
 ---
 
-## API
+## JavaScript
 
-### `RateLimiter.new(limit:, time:, redis:)`
-- Creates a rate limiter instance.
+### Setup & tests
 
-| Argument | Type    | Description                                |
-|----------|---------|--------------------------------------------|
-| `limit`  | Integer | Maximum requests allowed per IP per window |
-| `time`   | Integer | Window length in seconds (Redis key TTL)   |
-| `redis`  | Redis   | An existing Redis connection               |
-
-
-### `#allowed?(ip_address)`
-- **Read-only check** - Use when you want to check without recording a request.
-— does not increment the counter.
-
-|            |                                                                 |
-|------------|-----------------------------------------------------------------|
-| **Param**  | `ip_address` (String)                                           |
-| **Returns**| `true` if under limit or no record exists yet                   |
-|            | `false` if at or over limit                                     |
-| **Raises** | Nothing                                                         |
-
-
-### `#increment!(ip_address)`
-- **Records a request** — increments the counter for the IP.
-
-|            |                                                                 |
-|------------|-----------------------------------------------------------------|
-| **Param**  | `ip_address` (String)                                           |
-| **Returns**| Hash of the Redis record, e.g. `{ "limit" => "10", "count" => "3" }` |
-| **Raises** | `RequestLimitReachedError` when the limit is exceeded           |
-The `!` indicates this method mutates state (increments the count) and raises on failure.
-
-
-### `RequestLimitReachedError`
-
-Top-level exception raised by `#increment!` when an IP has hit its limit.
-
-```ruby
-  begin
-    limiter.increment!(ip)
-  rescue RequestLimitReachedError => e
-    puts e.message  # "You have breached your rate limit"
-  end
+```bash
+cd javascript
+npm install
+npm test
 ```
 
-### `#ttl(ip_address)`
-- Use when you want to check remaining limit time window for an IP.
+Tests are written with Jest and use ES modules.
 
-|            |                                                                 |
-|------------|-----------------------------------------------------------------|
-| **Param**  | `ip_address` (String)                                           |
-| **Returns**| Integer value representing rate window ttl for given IP         |
-| **Raises** | Nothing, but if IP not made requests, returns limiter' time     |
+### Quick start
+
+```javascript
+import { createClient } from "redis";
+import { RateLimiter } from "./src/rate-limiter.js";
+
+const redis = createClient();
+await redis.connect();
+
+const limiter = new RateLimiter({ limit: 10, time: 60, redis });
+const ip = "1.2.3.4";
+
+await limiter.allowed(ip);  // => true (read-only check)
+await limiter.check(ip);    // => 1 (records request, returns count)
+
+await redis.quit();
+```
+
+All Redis methods are async — use `await` on every call.
+
+### API
+
+All methods are `async` — use `await`.
+
+- `new RateLimiter({ limit, time, redis })` — create a limiter (`limit` = max requests per window, `time` = window in seconds).
+- `allowed(ip)` — read-only; returns `true` if under limit (or no record yet).
+- `check(ip)` — increment and return count; throws `RequestLimitReachedError` when over limit.
+- `ttl(ip)` — seconds until window resets; returns `time` if IP has no record.
+- `remaining(ip)` — requests left in the current window.
+- `resetAt(ip)` — Unix timestamp when the window expires.
+
+Redis keys: `redis-key:<ip>`. Test async errors: `await expect(limiter.check(ip)).rejects.toThrow(RequestLimitReachedError)`.
+
+---
